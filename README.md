@@ -2,7 +2,7 @@
 A set of scripts for converting genomes based on resequencing information.
 
 ## Scripts
-<i>QKgenome_conversion.py</i> converts a reference genome/gene space/transcriptome based on read alignments from a different accession/ecotype/cultivar/isolate based on user specified parameters for coverage and variant frequency.
+<i>QKgenome_conversion.py</i> converts a reference sequence based on read alignments from a different accession/ecotype/cultivar/isolate based on user specified parameters for coverage and variant frequency. The reference sequence can be a genome, a set of genes, or transcriptome. Memory requirements for the script are proportional to the length of the sequence space.
 
 ### Input
 1. Sequence (FASTA)
@@ -22,4 +22,4 @@ A set of scripts for converting genomes based on resequencing information.
 <i>QKgenome_phylogeny.py</i> uses the output generated from <i>QKgenome_conversion.py</i> to generate an input file in Phylip format for generating a phylogenetic tree. Additional uses of data include association genetics or candidate gene analysis.
 
 ## Example
-Coming soon.
+
