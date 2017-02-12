@@ -14,17 +14,17 @@ Improvements from existing script set (9 February 2017):
 	2. Initialize with prefix, skip individual file output
 	3. Remove "Interupted ORF column", more descriptive terms
 	4. Add analysis of intron splice junctions, specifically looking for SNPs at these positions
+	5. Export final file based on start position of ORFs (skips ordering step in Excel)
+	6. Add ability to plot figures that show
+		a. Variant frequency (with coverage threshold)
+		b. Average coverage across entire data set (gene space only)
+		c. Frequency of different splice sites in region
+		d. Candidate gene analysis file, well structured (use NA), export relevant images
 
 Future improvements to include:
-	1. Export final file based on start position of ORFs (skips ordering step in Excel)
-	2. Incorporate dN/dS analysis?
-	3. Add ability to plot figures that show
-		a. Variant frequency (with coverage threshold)
-		b. Average coverage across entire data set (what do I mean by this?)
-		c. Frequency of different splice sites in region
-		d. Candidate gene analysis file, make well structured (use NA), export relevant images, place in "figures" folder
-	4. Add ability to investigate heterokaryotic SNPs (such as in dikaryotic rusts)
-	5. Export statistics and information about alignment, with call information as well (for book keeping purposes, with date/time)
+	1. Incorporate dN/dS analysis?
+	2. Add ability to investigate heterokaryotic SNPs (such as in dikaryotic rusts)
+	3. Export statistics and information about alignment, with call information as well (for book keeping purposes, with date/time)
 		a. Document time - command is time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 		b. Number of genes evaluated
 		c. ???
@@ -176,6 +176,7 @@ def str_distance(string1, string2):
 usage = "usage: %prog [options] coverage_threshold frequency_threshold FASTA GFF3 pileup2snp pileup2indel genomecov prefix [expression files]"
 parser = OptionParser(usage=usage)
 parser.add_option("-a", "--annotation", action="store", type="string", dest="annotation", default='', help="Annotation file (tab-limited)")
+parser.add_option("-h", "--het", action="store_true", dest="het", default=False, help="Evaluate heterozygous/hemizygous/dikaryotic SNPs and InDels")
 parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
 (options, args) = parser.parse_args()
 
@@ -197,7 +198,7 @@ summary_file.write(' ' + ' '.join(args) + '\n')
 summary_file.write('Run start time: ' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + '\n')
 
 # read in reference genome, determine size of all contigs
-print 'fasta'
+print 'FASTA'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'fasta' + '\n')
 fasta = open(args[2], 'r')
 
@@ -220,21 +221,25 @@ for ID in ID_sequence.keys():
 	ID_sequence_converted[ID] = ID_sequence[ID]
 
 # import SNPs
-print 'snps'
+print 'SNPs'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'SNPs' + '\n')
 contig_position_allele_SNPs = import_SNPs(args[4], coverage_threshold, variant_frequency_threshold, prefix)
 
 # import indels
-print 'indels'
+print 'InDels'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'InDels' + '\n')
 contig_position_allele_indels = import_indels(args[5], coverage_threshold, variant_frequency_threshold, prefix)
 
 # processing genomic sequence
-print 'convert snps'
+print 'Convert SNPs'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Convert SNPs' + '\n')
 for contig in contig_position_allele_SNPs.keys():
 	for position in contig_position_allele_SNPs[contig].keys():
 		ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
 	
 
-print 'convert indels'
+print 'Convert InDels'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Convert InDels' + '\n')
 for contig in contig_position_allele_indels.keys():
 	base_pair_offset = 0
 
@@ -259,7 +264,9 @@ for contig in list(sets.Set(ID_sequence_converted.keys()) - sets.Set(contig_posi
 	for position in range(len(ID_sequence_converted[contig])):
 		contig_adjustment_base_pair[contig].append(base_pair_offset)
 
-print 'export modified sequence'
+print 'Export Modified Sequence'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Export Modified Sequence' + '\n')
+
 converted_sequence_file = open(prefix + '.fa', 'w')
 
 for ID in ID_sequence_converted.keys():
@@ -270,7 +277,9 @@ converted_sequence_file.close()
 
 
 # read in GFF3, write adjusted GFF3
-print 'gff3'
+print 'GFF3'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'GFF3' + '\n')
+
 contig_geneID_transcript_start_stop_strand = {}
 contig_geneID_transcript_start_stop_strand_converted = {}
 geneID_exons = {}
@@ -345,7 +354,9 @@ converted_GTF_file.close()
 
 # import annotations
 if len(options.annotation) > 0:
-	print 'annotations'
+	print 'Annotations'
+	summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Annotations' + '\n')
+
 	annotation_file = open(options.annotation, 'r')
 	
 	gene_annotation = {}
@@ -359,7 +370,9 @@ if len(options.annotation) > 0:
 	annotation_file.close()
 
 # import genomecov to estimate coverage over length of coding sequences
-print 'genomecov'
+print 'Genomecov'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Genomecov' + '\n')
+
 genomecov_file = open(args[6], 'r')
 
 # initialize dictionary contig_evaluated_positions with positions of genes
@@ -375,7 +388,9 @@ for contig in contig_geneID_transcript_start_stop_strand.keys():
 			for position_index in range(geneID_CDS_exons[geneID][exon_index][0] + 1, geneID_CDS_exons[geneID][exon_index][1] + 2):
 				contig_evaluated_positions[contig].append(position_index)
 
-print 'evaluated positions'
+print 'Evaluated Positions'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Evaluated Positions' + '\n')
+
 contig_position_index = {}
 contig_position_coverage = {}
 
@@ -412,7 +427,9 @@ genomecov_file.close()
 
 # generate a masked sequence based on coverage
 if options.mask:
-	print 'mask sequence'
+	print 'Mask Sequence'
+	summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Mask Sequence' + '\n')
+
 	ID_sequence_masked = {}
 
 	# initialize sequence
@@ -445,7 +462,8 @@ if options.mask:
 dataset_gene_expression = {}
 
 if len(args) > 9:
-	print 'import expression'
+	print 'Expression'
+	summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Expression' + '\n')
 
 	for expression_filename in args[9:]:
 		expression_file = open(expression_filename, 'r')
@@ -465,6 +483,9 @@ experimental_datasets = dataset_gene_expression.keys()
 experimental_datasets.sort()
 
 # export transcript files for transdecoder analysis
+print 'Export'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'export' + '\n')
+
 #ORF_file = open(prefix + '_ORF.fa', 'w')
 ORF_converted_file = open(prefix + '_CDS.fa', 'w')
 gene_model_analysis_file = open(prefix + '_candidate_gene_analysis.txt', 'w')
@@ -481,190 +502,211 @@ for index in range(len(experimental_datasets)):
 
 gene_model_analysis_file.write('\n')
 
+total_coverage = [0, 0]
+
 for contig in contig_geneID_transcript_start_stop_strand.keys():
+	position_gene = {}
+
 	for geneID in contig_geneID_transcript_start_stop_strand[contig].keys():
-		gene_model_analysis_file.write(geneID)
+		if geneID_CDS_exons[geneID][0][0] not in position_gene.keys():
+			position_gene[geneID_CDS_exons[geneID][0][0]] = []
 
-		exon_sequence = ''
-		exon_sequence_converted = ''
+		position_gene[geneID_CDS_exons[geneID][0][0]].append(geneID)
+	
+	positions = position_gene.keys()
+	positions.sort()
 
-		coding_sequence = ''
-		coding_sequence_converted = ''
+	for position in positions:
+		geneIDs = position_gene[position]
+		geneIDs.sort()
 
-		# export index of start and stop of ORF
-		gene_model_analysis_file.write('\t' + str(geneID_CDS_exons[geneID][0][0] + 1))
-		gene_model_analysis_file.write('\t' + str(geneID_CDS_exons[geneID][len(geneID_CDS_exons[geneID]) - 1][1] + 1))
-
-		# export strand
-		gene_model_analysis_file.write('\t' + contig_geneID_transcript_start_stop_strand[contig][geneID][2])
-
-
-		# export mRNA length
-		if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '+':
-			exon_order = range(len(geneID_exons[geneID]))
-		elif contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '-':
-			exon_order = range(len(geneID_exons[geneID]))
-			exon_order.reverse()
-
-		for exon_index in exon_order:
-			exon_sequence += ID_sequence[contig][geneID_exons[geneID][exon_index][0]:geneID_exons[geneID][exon_index][1] + 1]
-			exon_sequence_converted += ID_sequence_converted[contig][geneID_exons_converted[geneID][exon_index][0]:geneID_exons_converted[geneID][exon_index][1] + 1]
-
-			# export intron junction
+		for geneID in geneIDs:
+			gene_model_analysis_file.write(geneID)
+	
+			exon_sequence = ''
+			exon_sequence_converted = ''
+	
+			coding_sequence = ''
+			coding_sequence_converted = ''
+	
+			# export index of start and stop of ORF
+			gene_model_analysis_file.write('\t' + str(geneID_CDS_exons[geneID][0][0] + 1))
+			gene_model_analysis_file.write('\t' + str(geneID_CDS_exons[geneID][len(geneID_CDS_exons[geneID]) - 1][1] + 1))
+	
+			# export strand
+			gene_model_analysis_file.write('\t' + contig_geneID_transcript_start_stop_strand[contig][geneID][2])
+	
+	
+			# export mRNA length
 			if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '+':
-				if exon_index < (len(exon_order) - 1):
-					intron_junction_file.write(geneID + '\t' + str(exon_index) + '-' + str(exon_index + 1) + '\t' + ID_sequence[contig][(geneID_exons[geneID][exon_index][1] + 1):(geneID_exons[geneID][exon_index][1] + 3)] + ID_sequence[contig][(geneID_exons[geneID][exon_index + 1][0] - 2):geneID_exons[geneID][exon_index + 1][0]])
-
+				exon_order = range(len(geneID_exons[geneID]))
+			elif contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '-':
+				exon_order = range(len(geneID_exons[geneID]))
+				exon_order.reverse()
+	
+			for exon_index in exon_order:
+				exon_sequence += ID_sequence[contig][geneID_exons[geneID][exon_index][0]:geneID_exons[geneID][exon_index][1] + 1]
+				exon_sequence_converted += ID_sequence_converted[contig][geneID_exons_converted[geneID][exon_index][0]:geneID_exons_converted[geneID][exon_index][1] + 1]
+	
+				# export intron junction
+				if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '+':
+					if exon_index < (len(exon_order) - 1):
+						intron_junction_file.write(geneID + '\t' + str(exon_index) + '-' + str(exon_index + 1) + '\t' + ID_sequence[contig][(geneID_exons[geneID][exon_index][1] + 1):(geneID_exons[geneID][exon_index][1] + 3)] + ID_sequence[contig][(geneID_exons[geneID][exon_index + 1][0] - 2):geneID_exons[geneID][exon_index + 1][0]])
+	
+						if options.mask:
+							intron_junction_file.write('\t' + ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index][1] + 1):(geneID_exons_converted[geneID][exon_index][1] + 3)] + ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index + 1][0] - 2):geneID_exons_converted[geneID][exon_index + 1][0]] + '\n')
+						else:
+							intron_junction_file.write('\t' + ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index][1] + 1):(geneID_exons_converted[geneID][exon_index][1] + 3)] + ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index + 1][0] - 2):geneID_exons_converted[geneID][exon_index + 1][0]] + '\n')
+				if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '-':
+					if exon_index > 0:
+						intron_junction_file.write(geneID + '\t' + str(len(geneID_exons[geneID]) - exon_index) + '-' + str(len(geneID_exons[geneID]) - exon_index + 1) + '\t' + reverse_complement(ID_sequence[contig][(geneID_exons[geneID][exon_index - 1][1] + 1):(geneID_exons[geneID][exon_index - 1][1] + 3)] + ID_sequence[contig][(geneID_exons[geneID][exon_index][0] - 2):geneID_exons[geneID][exon_index][0]]))	
+						if options.mask:
+							intron_junction_file.write('\t' + reverse_complement(ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index - 1][1] + 1):(geneID_exons_converted[geneID][exon_index - 1][1] + 3)] + ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index][0] - 2):geneID_exons_converted[geneID][exon_index][0]]) + '\n')	
+						else:
+							intron_junction_file.write('\t' + reverse_complement(ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index - 1][1] + 1):(geneID_exons_converted[geneID][exon_index - 1][1] + 3)] + ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index][0] - 2):geneID_exons_converted[geneID][exon_index][0]]) + '\n')	
+	
+			gene_model_analysis_file.write('\t' + str(len(exon_sequence_converted)))
+	
+			# determine coverage of reads (based on threshold)
+			coverage = []
+	
+			# correct code below to just change exon order, otherwise all code is identical and not needed
+			if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '+':
+				exon_order = range(len(geneID_CDS_exons[geneID]))
+	
+				for exon_index in exon_order:
+					coding_sequence += ID_sequence[contig][geneID_CDS_exons[geneID][exon_index][0]:geneID_CDS_exons[geneID][exon_index][1] + 1]
+	
+					for position_index in range(geneID_CDS_exons[geneID][exon_index][0], geneID_CDS_exons[geneID][exon_index][1] + 1):
+						if contig_position_coverage[contig][position_index] >= coverage_threshold:
+							coverage.append(1)
+							total_coverage[1] += 1
+						else:
+							coverage.append(0)
+							total_coverage[0] += 1
+				
+				for exon_index in exon_order:
 					if options.mask:
-						intron_junction_file.write('\t' + ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index][1] + 1):(geneID_exons_converted[geneID][exon_index][1] + 3)] + ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index + 1][0] - 2):geneID_exons_converted[geneID][exon_index + 1][0]] + '\n')
+						coding_sequence_converted += ID_sequence_masked[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
 					else:
-						intron_junction_file.write('\t' + ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index][1] + 1):(geneID_exons_converted[geneID][exon_index][1] + 3)] + ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index + 1][0] - 2):geneID_exons_converted[geneID][exon_index + 1][0]] + '\n')
+						coding_sequence_converted += ID_sequence_converted[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
+	
+				#ORF_file.write('>' + geneID + '_source\n')
+				#ORF_file.write(coding_sequence + '\n')
+				ORF_converted_file.write('>' + geneID + '\n')
+				ORF_converted_file.write(coding_sequence_converted + '\n')
+	
+				CDS =  Seq(coding_sequence, IUPAC.unambiguous_dna)
+				CDSc =  Seq(coding_sequence_converted, IUPAC.unambiguous_dna)
+	
+				if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence)) > 0:
+					pep = ''
+				elif (len(coding_sequence) % 3) == 0:
+					pep = CDS.translate(to_stop=True)
+				else:
+					pep = ''
+	
+				if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence_converted)) > 0:
+					pep = ''
+				elif (len(coding_sequence_converted) % 3) == 0:
+					pepc = CDSc.translate(to_stop=True)
+				else:
+					pepc = ''
+	
+				#if str(pep) != str(pepc):
+				#	print geneID + '\t' + 'different' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
+				#else:
+				#	print geneID + '\t' +  'same' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
+	
 			if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '-':
-				if exon_index > 0:
-					intron_junction_file.write(geneID + '\t' + str(len(geneID_exons[geneID]) - exon_index) + '-' + str(len(geneID_exons[geneID]) - exon_index + 1) + '\t' + reverse_complement(ID_sequence[contig][(geneID_exons[geneID][exon_index - 1][1] + 1):(geneID_exons[geneID][exon_index - 1][1] + 3)] + ID_sequence[contig][(geneID_exons[geneID][exon_index][0] - 2):geneID_exons[geneID][exon_index][0]]))	
+				exon_order = range(len(geneID_CDS_exons[geneID]))
+				exon_order.reverse()
+	
+				for exon_index in exon_order:
+					coding_sequence += ID_sequence[contig][geneID_CDS_exons[geneID][exon_index][0]:geneID_CDS_exons[geneID][exon_index][1] + 1]
+	
+					for position_index in range(geneID_CDS_exons[geneID][exon_index][0], geneID_CDS_exons[geneID][exon_index][1] + 1):
+						if contig_position_coverage[contig][position_index] >= coverage_threshold:
+							coverage.append(1)
+							total_coverage[1] += 1
+						else:
+							coverage.append(0)
+							total_coverage[0] += 1
+				
+				for exon_index in exon_order:
 					if options.mask:
-						intron_junction_file.write('\t' + reverse_complement(ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index - 1][1] + 1):(geneID_exons_converted[geneID][exon_index - 1][1] + 3)] + ID_sequence_masked[contig][(geneID_exons_converted[geneID][exon_index][0] - 2):geneID_exons_converted[geneID][exon_index][0]]) + '\n')	
+						coding_sequence_converted += ID_sequence_masked[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
 					else:
-						intron_junction_file.write('\t' + reverse_complement(ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index - 1][1] + 1):(geneID_exons_converted[geneID][exon_index - 1][1] + 3)] + ID_sequence_converted[contig][(geneID_exons_converted[geneID][exon_index][0] - 2):geneID_exons_converted[geneID][exon_index][0]]) + '\n')	
-
-		gene_model_analysis_file.write('\t' + str(len(exon_sequence_converted)))
-
-		# determine coverage of reads (based on threshold)
-		coverage = []
-
-		# correct code below to just change exon order, otherwise all code is identical and not needed
-		if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '+':
-			exon_order = range(len(geneID_CDS_exons[geneID]))
-
-			for exon_index in exon_order:
-				coding_sequence += ID_sequence[contig][geneID_CDS_exons[geneID][exon_index][0]:geneID_CDS_exons[geneID][exon_index][1] + 1]
-
-				for position_index in range(geneID_CDS_exons[geneID][exon_index][0], geneID_CDS_exons[geneID][exon_index][1] + 1):
-					if contig_position_coverage[contig][position_index] >= coverage_threshold:
-						coverage.append(1)
-					else:
-						coverage.append(0)
-			
-			for exon_index in exon_order:
-				if options.mask:
-					coding_sequence_converted += ID_sequence_masked[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
+						coding_sequence_converted += ID_sequence_converted[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
+	
+				#ORF_file.write('>' + geneID + '\n')
+				#ORF_file.write(reverse_complement(coding_sequence) + '\n')
+				ORF_converted_file.write('>' + geneID + '\n')
+				ORF_converted_file.write(reverse_complement(coding_sequence_converted) + '\n')
+	
+				CDS =  Seq(reverse_complement(coding_sequence), IUPAC.unambiguous_dna)
+				CDSc =  Seq(reverse_complement(coding_sequence_converted), IUPAC.unambiguous_dna)
+	
+				if (len(coding_sequence) % 3) == 0:
+					pep = CDS.translate(to_stop=True)
 				else:
-					coding_sequence_converted += ID_sequence_converted[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
-
-			#ORF_file.write('>' + geneID + '_source\n')
-			#ORF_file.write(coding_sequence + '\n')
-			ORF_converted_file.write('>' + geneID + '\n')
-			ORF_converted_file.write(coding_sequence_converted + '\n')
-
-			CDS =  Seq(coding_sequence, IUPAC.unambiguous_dna)
-			CDSc =  Seq(coding_sequence_converted, IUPAC.unambiguous_dna)
-
-			if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence)) > 0:
-				pep = ''
-			elif (len(coding_sequence) % 3) == 0:
-				pep = CDS.translate(to_stop=True)
-			else:
-				pep = ''
-
-			if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence_converted)) > 0:
-				pep = ''
-			elif (len(coding_sequence_converted) % 3) == 0:
-				pepc = CDSc.translate(to_stop=True)
-			else:
+					pep = ''
+	
 				pepc = ''
-
-			#if str(pep) != str(pepc):
-			#	print geneID + '\t' + 'different' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
-			#else:
-			#	print geneID + '\t' +  'same' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
-
-		if contig_geneID_transcript_start_stop_strand[contig][geneID][2] == '-':
-			exon_order = range(len(geneID_CDS_exons[geneID]))
-			exon_order.reverse()
-
-			for exon_index in exon_order:
-				coding_sequence += ID_sequence[contig][geneID_CDS_exons[geneID][exon_index][0]:geneID_CDS_exons[geneID][exon_index][1] + 1]
-
-				for position_index in range(geneID_CDS_exons[geneID][exon_index][0], geneID_CDS_exons[geneID][exon_index][1] + 1):
-					if contig_position_coverage[contig][position_index] >= coverage_threshold:
-						coverage.append(1)
-					else:
-						coverage.append(0)
-			
-			for exon_index in exon_order:
+	
 				if options.mask:
-					coding_sequence_converted += ID_sequence_masked[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
+					pepc = ''
+				elif (len(coding_sequence_converted) % 3) == 0:
+					pepc = CDSc.translate(to_stop=True)
 				else:
-					coding_sequence_converted += ID_sequence_converted[contig][geneID_CDS_exons_converted[geneID][exon_index][0]:geneID_CDS_exons_converted[geneID][exon_index][1] + 1]
-
-			#ORF_file.write('>' + geneID + '\n')
-			#ORF_file.write(reverse_complement(coding_sequence) + '\n')
-			ORF_converted_file.write('>' + geneID + '\n')
-			ORF_converted_file.write(reverse_complement(coding_sequence_converted) + '\n')
-
-			CDS =  Seq(reverse_complement(coding_sequence), IUPAC.unambiguous_dna)
-			CDSc =  Seq(reverse_complement(coding_sequence_converted), IUPAC.unambiguous_dna)
-
-			if (len(coding_sequence) % 3) == 0:
-				pep = CDS.translate(to_stop=True)
-			else:
-				pep = ''
-
-			pepc = ''
-
-			if options.mask:
-				pepc = ''
-			elif (len(coding_sequence_converted) % 3) == 0:
-				pepc = CDSc.translate(to_stop=True)
-			else:
-				pepc = ''
-
-			#if str(pep) != str(pepc):
-			#	print geneID + '\t' + 'different' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
-			#else:
-			#	print geneID + '\t' + 'same' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
-
-		# export coverage
-		gene_model_analysis_file.write('\t' + str(float(sum(coverage)) / len(coverage)))
-
-		# if an InDel does not exist, determine the number of SNPs
-		DNA_distance = str_distance(coding_sequence, coding_sequence_converted)
-
-		if (len(coding_sequence) % 3) > 0:
-			print geneID, len(coding_sequence)
-
-		if DNA_distance >= 0:
-			if options.mask:
-				protein_distance = -1
-			else:
-				protein_distance = str_distance(str(pep), str(pepc))
-
-			gene_model_analysis_file.write('\t' + str(DNA_distance))
-			gene_model_analysis_file.write('\t' + str(len(str(pep))))
-
-			if protein_distance >= 0:
-				gene_model_analysis_file.write('\t' + str(protein_distance))
-				gene_model_analysis_file.write('\t' + 'NA')
-				gene_model_analysis_file.write('\t' + 'No')
+					pepc = ''
+	
+				#if str(pep) != str(pepc):
+				#	print geneID + '\t' + 'different' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
+				#else:
+				#	print geneID + '\t' + 'same' + '\t' + str(len(coding_sequence) % 3) + '\t' + str(len(coding_sequence_converted) % 3)
+	
+			# export coverage
+			gene_model_analysis_file.write('\t' + str(float(sum(coverage)) / len(coverage)))
+	
+			# if an InDel does not exist, determine the number of SNPs
+			DNA_distance = str_distance(coding_sequence, coding_sequence_converted)
+	
+			if (len(coding_sequence) % 3) > 0:
+				print geneID, len(coding_sequence)
+	
+			if DNA_distance >= 0:
+				if options.mask:
+					protein_distance = -1
+				else:
+					protein_distance = str_distance(str(pep), str(pepc))
+	
+				gene_model_analysis_file.write('\t' + str(DNA_distance))
+				gene_model_analysis_file.write('\t' + str(len(str(pep))))
+	
+				if protein_distance >= 0:
+					gene_model_analysis_file.write('\t' + str(protein_distance))
+					gene_model_analysis_file.write('\t' + 'NA')
+					gene_model_analysis_file.write('\t' + 'No')
+				else:
+					gene_model_analysis_file.write('\t' + 'NA')
+					gene_model_analysis_file.write('\t' + 'NA')
+					gene_model_analysis_file.write('\t' + 'Yes')
 			else:
 				gene_model_analysis_file.write('\t' + 'NA')
+				gene_model_analysis_file.write('\t' + str(len(str(pep))))
 				gene_model_analysis_file.write('\t' + 'NA')
+				gene_model_analysis_file.write('\t' + str(len(str(coding_sequence_converted)) - len(str(coding_sequence))))
 				gene_model_analysis_file.write('\t' + 'Yes')
-		else:
-			gene_model_analysis_file.write('\t' + 'NA')
-			gene_model_analysis_file.write('\t' + str(len(str(pep))))
-			gene_model_analysis_file.write('\t' + 'NA')
-			gene_model_analysis_file.write('\t' + str(len(str(coding_sequence_converted)) - len(str(coding_sequence))))
-			gene_model_analysis_file.write('\t' + 'Yes')
-
-		if len(options.annotation) > 0:
-			if string.replace(geneID, '.v3.1', '') in gene_annotation.keys():
-				gene_model_analysis_file.write('\t' + gene_annotation[string.replace(geneID, '.v3.1', '')])
-
-			for index in range(len(experimental_datasets)):
-				gene_model_analysis_file.write('\t' + dataset_gene_expression[experimental_datasets[index]][geneID])
-
-		gene_model_analysis_file.write('\n')
+	
+			if len(options.annotation) > 0:
+				if string.replace(geneID, '.v3.1', '') in gene_annotation.keys():
+					gene_model_analysis_file.write('\t' + gene_annotation[string.replace(geneID, '.v3.1', '')])
+	
+				for index in range(len(experimental_datasets)):
+					gene_model_analysis_file.write('\t' + dataset_gene_expression[experimental_datasets[index]][geneID])
+	
+			gene_model_analysis_file.write('\n')
 
 
 #ORF_file.close()
@@ -700,9 +742,13 @@ for junction in intron_junction_count.keys():
 intron_junction_counts_file.close()
 
 # data visualization
+print 'Data Visualization'
+summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Data Visualization' + '\n')
+
 data_visualization_file = open(prefix + '.R', 'w')
 
 data_visualization_file.write('library(ggplot2)' + '\n')
+data_visualization_file.write('library(scales)' + '\n')
 data_visualization_file.write('\n')
 data_visualization_file.write('SNP = read.table(file="' + prefix + '_SNP_frequency.txt", header=T)' + '\n')
 data_visualization_file.write('SNP = data.frame(SNP)' + '\n')
@@ -723,6 +769,12 @@ data_visualization_file.write('CGA = data.frame(CGA)' + '\n')
 data_visualization_file.write('' + '\n')
 data_visualization_file.write('png(file="' + prefix + '_coverage_histogram.png", height=600, width=600)' + '\n')
 data_visualization_file.write('ggplot(CGA, aes(Coverage)) + geom_histogram(binwidth = 0.05)' + '\n')
+data_visualization_file.write('dev.off()' + '\n')
+data_visualization_file.write('' + '\n')
+data_visualization_file.write('png(file="' + prefix + '_total_coverage_piechart.png", height=600, width=600)' + '\n')
+data_visualization_file.write('pie.data <- data.frame(group = c("Coverage met", "Coverage not met"), value = c(' + str(total_coverage[1]) + ', ' + str(total_coverage[0]) + '))' + '\n')
+data_visualization_file.write('blank_theme <- theme_minimal() + theme(axis.title.x = element_blank(), axis.title.y = element_blank(), panel.border = element_blank(), panel.grid=element_blank(), axis.ticks = element_blank(), plot.title=element_text(size=14, face="bold"))' + '\n')
+data_visualization_file.write('ggplot(pie.data, aes(x="", y=value, fill=group)) + geom_bar(width = 1, stat = "identity") + coord_polar("y", start=0) + scale_fill_manual(name="", values=c("#E69F00", "#56B4E9")) + blank_theme + theme(axis.text.x=element_blank()) + geom_text(aes(y = value/2 + c(0, cumsum(value)[-length(value)])), label = percent(c(' + str(float(total_coverage[1]) / sum(total_coverage)) + ',' + str(float(total_coverage[0]) / sum(total_coverage)) + ')), size=5)' + '\n')
 data_visualization_file.write('dev.off()' + '\n')
 data_visualization_file.write('' + '\n')
 
