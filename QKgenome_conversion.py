@@ -176,7 +176,7 @@ def str_distance(string1, string2):
 usage = "usage: %prog [options] coverage_threshold frequency_threshold FASTA GFF3 pileup2snp pileup2indel genomecov prefix [expression files]"
 parser = OptionParser(usage=usage)
 parser.add_option("-a", "--annotation", action="store", type="string", dest="annotation", default='', help="Annotation file (tab-limited)")
-parser.add_option("-h", "--het", action="store_true", dest="het", default=False, help="Evaluate heterozygous/hemizygous/dikaryotic SNPs and InDels")
+parser.add_option("-d", "--heterozygous", action="store_true", dest="het", default=False, help="Evaluate heterozygous/hemizygous/dikaryotic SNPs and InDels")
 parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
 (options, args) = parser.parse_args()
 
