@@ -406,21 +406,22 @@ for contig in contig_evaluated_positions.keys():
 for line in genomecov_file.readlines():
 	sline = string.split(line)
 
-	if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
-		while int(sline[1]) > contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
-			contig_position_index[sline[0]] += 1
+	if sline[0] in contig_evaluated_positions.keys():
+		if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
+			while int(sline[1]) > contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
+				contig_position_index[sline[0]] += 1
 
-			if contig_position_index[sline[0]] > len(contig_evaluated_positions[sline[0]]):
-				break
+				if contig_position_index[sline[0]] > len(contig_evaluated_positions[sline[0]]):
+					break
 
-	if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
-		if int(sline[1]) == contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
-			bases = int(float(sline[2])) 
+		if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
+			if int(sline[1]) == contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
+				bases = int(float(sline[2])) 
 
-			# save coverage, position in Python start (0) not GFF (1), positions with no coverage will not be present as a key
-			contig_position_coverage[sline[0]][int(sline[1]) - 1] = bases
+				# save coverage, position in Python start (0) not GFF (1), positions with no coverage will not be present as a key
+				contig_position_coverage[sline[0]][int(sline[1]) - 1] = bases
 
-			contig_position_index[sline[0]] += 1
+				contig_position_index[sline[0]] += 1
 
 genomecov_file.close()
 
