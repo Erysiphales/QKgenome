@@ -51,8 +51,11 @@ from synonymous_calc_MM1 import *
 """
 
 ## global variables
+DNA = ['A', 'C', 'G', 'T']
 cmp_DNA = {'A':'T', 'T':'A', 'G':'C', 'C':'G', 'M':'K', 'R':'Y', 'W':'S', 'S':'W', 'Y':'R', 'K':'M', 'V':'B', 'H':'D', 'D':'H', 'B':'V', 'X':'X', 'N':'N'}
 IUPAC_convert = {'AG':'R', 'GA':'R', 'CT':'Y', 'TC':'Y', 'CA':'M', 'AC':'M', 'TG':'K', 'GT':'K', 'TA':'W', 'AT':'W', 'CG':'S', 'GC':'S'}
+IUPAC_SNP = {'R':['A', 'G'], 'Y':['C', 'T'], 'M':['A', 'C'], 'K':['G', 'T'], 'W':['A', 'T'], 'S':['C', 'G']}
+
 
 ## functions
 # reverse complement
@@ -99,6 +102,69 @@ def import_SNPs(varscan, read_threshold, percent_threshold, prefix):
 							contig_position_allele[sline[0]] = {}
 
 						contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[18], float(string.replace(sline[6], '%', ''))]
+
+		truth = True
+
+	varscan_file.close()
+	SNP_frequency_file.close()
+
+	return contig_position_allele
+
+# import_heterozygous_SNPs
+# reads through a VarScan output file and only retains SNPs that are above the read count and between the lower and upper percent thresholds
+# contig -> position of SNP -> [reference allele, alternate allele, percent variant frequency]
+# modified to work with differing output from VarScan (pileup versus mpileup)
+def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_threshold, percent_threshold, prefix):
+	contig_position_allele = {}
+
+	varscan_file = open(varscan, 'r')
+	SNP_frequency_file = open(prefix + '_heterozygous_SNP_frequency.txt', 'w')
+	SNP_frequency_file.write('coverage' + '\t' + 'frequency' + '\n')
+	
+	truth = False
+
+	for line in varscan_file.readlines():
+		sline = string.split(line)
+
+		if truth:
+			if '%' in sline[4]:
+				if int(string.split(sline[4], ':')[1]) >= read_threshold:
+					SNP_frequency_file.write(string.split(sline[4], ':')[1] + '\t' + string.replace(string.split(sline[4], ':')[4], '%', '') + '\n')
+
+					if float(string.replace(string.split(sline[4], ':')[4], '%', '')) >= lower_threshold:
+						if float(string.replace(string.split(sline[4], ':')[4], '%', '')) < higher_threshold:
+							if sline[0] not in contig_position_allele.keys():
+								contig_position_allele[sline[0]] = {}
+
+							if int(sline[1]) not in contig_position_allele[sline[0]].keys():
+								if sline[3] in IUPAC_SNP.keys():
+									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], variant_allele, float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
+								else:
+									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
+							else:
+								variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+								true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+								contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+			else:
+				if (int(sline[4]) + int(sline[5])) >= read_threshold:
+					SNP_frequency_file.write(str(int(sline[4]) + int(sline[5])) + '\t' + string.replace(sline[6], '%', '') + '\n')
+
+					if float(string.replace(sline[6], '%', '')) >= lower_threshold:
+						if float(string.replace(sline[6], '%', '')) < higher_threshold:
+							if sline[0] not in contig_position_allele.keys():
+								contig_position_allele[sline[0]] = {}
+
+							if int(sline[1]) not in contig_position_allele[sline[0]].keys():
+								if sline[3] in IUPAC_SNP.keys():
+									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], variant_allele, float(string.replace(sline[6], '%', ''))]
+								else:
+									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(sline[6], '%', ''))]
+							else:
+								variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+								true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+								contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 
 		truth = True
 
@@ -178,6 +244,8 @@ parser = OptionParser(usage=usage)
 parser.add_option("-a", "--annotation", action="store", type="string", dest="annotation", default='', help="Annotation file (tab-limited)")
 parser.add_option("-d", "--heterozygous", action="store_true", dest="het", default=False, help="Evaluate heterozygous/hemizygous/dikaryotic SNPs and InDels")
 parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
+parser.add_option("-l", "--lower", action="store", type="float", dest="lower", default=-1, help="Lower threshold for heterozygous SNPs")
+parser.add_option("-u", "--upper", action="store", type="float", dest="upper", default=-1, help="Upper threshold for heterozygous SNPs")
 (options, args) = parser.parse_args()
 
 
@@ -185,6 +253,7 @@ parser.add_option("-m", "--mask", action="store_true", dest="mask", default=Fals
 coverage_threshold = int(args[0])
 variant_frequency_threshold = float(args[1])
 prefix = args[7]
+heterozygous_analysis = False
 
 summary_file = open(prefix + '_analysis_' + time.strftime("%Y%m%d_%Hh%Mm%Ss", time.gmtime()) + '.txt', 'w')
 summary_file.write('python %prog')
@@ -193,6 +262,13 @@ if options.mask:
 	summary_file.write(' -m')
 if len(options.annotation) > 0:
 	summary_file.write(' -a ' + options.annotation)
+if options.lower > 0:
+	if options.lower < 100:
+		if options.upper > 0:
+			if options.upper < 100:
+				summary_file.write(' -l ' + str(options.lower) + ' -u ' + str(options.upper))
+				heterozygous_analysis = True
+
 
 summary_file.write(' ' + ' '.join(args) + '\n')
 summary_file.write('Run start time: ' + time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + '\n')
@@ -225,6 +301,9 @@ print 'SNPs'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'SNPs' + '\n')
 contig_position_allele_SNPs = import_SNPs(args[4], coverage_threshold, variant_frequency_threshold, prefix)
 
+if heterozygous_analysis:
+	contig_position_allele_heterozygous_SNPs = import_heterozygous_SNPs(args[4], coverage_threshold, options.lower, options.upper, variant_frequency_threshold, prefix)
+
 # import indels
 print 'InDels'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'InDels' + '\n')
@@ -236,7 +315,11 @@ summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Co
 for contig in contig_position_allele_SNPs.keys():
 	for position in contig_position_allele_SNPs[contig].keys():
 		ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
-	
+
+if heterozygous_analysis:
+	for contig in contig_position_allele_heterozygous_SNPs.keys():
+		for position in contig_position_allele_heterozygous_SNPs[contig].keys():
+			ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_heterozygous_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
 
 print 'Convert InDels'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Convert InDels' + '\n')
