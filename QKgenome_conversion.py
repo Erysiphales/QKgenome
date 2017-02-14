@@ -256,7 +256,7 @@ prefix = args[7]
 heterozygous_analysis = False
 
 summary_file = open(prefix + '_analysis_' + time.strftime("%Y%m%d_%Hh%Mm%Ss", time.gmtime()) + '.txt', 'w')
-summary_file.write('python %prog')
+summary_file.write('python QKgenome_conversion.py')
 
 if options.mask:
 	summary_file.write(' -m')
