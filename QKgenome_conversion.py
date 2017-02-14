@@ -687,13 +687,17 @@ for contig in contig_geneID_transcript_start_stop_strand.keys():
 	
 				if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence)) > 0:
 					pep = ''
+				elif len(sets.Set(coding_sequence) - sets.Set(DNA)) > 0:
+					pep = ''
 				elif (len(coding_sequence) % 3) == 0:
 					pep = CDS.translate(to_stop=True)
 				else:
 					pep = ''
 	
 				if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence_converted)) > 0:
-					pep = ''
+					pepc = ''
+				elif len(sets.Set(coding_sequence_converted) - sets.Set(DNA)) > 0:
+					pepc = ''
 				elif (len(coding_sequence_converted) % 3) == 0:
 					pepc = CDSc.translate(to_stop=True)
 				else:
@@ -733,14 +737,20 @@ for contig in contig_geneID_transcript_start_stop_strand.keys():
 				CDS =  Seq(reverse_complement(coding_sequence), IUPAC.unambiguous_dna)
 				CDSc =  Seq(reverse_complement(coding_sequence_converted), IUPAC.unambiguous_dna)
 	
-				if (len(coding_sequence) % 3) == 0:
+				if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence)) > 0:
+					pep = ''
+				elif len(sets.Set(coding_sequence) - sets.Set(DNA)) > 0:
+					pep = ''
+				elif (len(coding_sequence) % 3) == 0:
 					pep = CDS.translate(to_stop=True)
 				else:
 					pep = ''
 	
 				pepc = ''
 	
-				if options.mask:
+				if len(sets.Set(['N', 'n']) & sets.Set(coding_sequence_converted)) > 0:
+					pepc = ''
+				elif len(sets.Set(coding_sequence_converted) - sets.Set(DNA)) > 0:
 					pepc = ''
 				elif (len(coding_sequence_converted) % 3) == 0:
 					pepc = CDSc.translate(to_stop=True)
