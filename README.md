@@ -23,4 +23,7 @@ A set of scripts for converting genomes based on resequencing information.
 <i>QKgenome_phylogeny.py</i> uses the output generated from <i>QKgenome_conversion.py</i> to generate an input file in Phylip format for generating a phylogenetic tree. Additional uses of data include association genetics or candidate gene analysis.
 
 ## Example
-
+Converts a region of the <i>Brachypodium distachyon</i> genome from the reference (accession Bd21) into the accession ABR6 version. Read coverage required is 20 reads and a minimum variant frequency of reads at 95%. In addition, read counts from RNAseq data are included within the analysis.
+```bash
+python QKgenome_conversion.py 20 95.0 Bd4_24522081_29856080.fa Bd4_24522081_29856080.gff3 Yrr1_Jer1_sorted.rmdup.pileup2snp.txt Yrr1_Jer1_sorted.rmdup.pileup2indel.txt Yrr1_Jer1_sorted.rmdup.genomecov.txt Yrr1_Jer1 Yrr1_Jer1_reference_Jer1_RNAseq_tophat_readCounts.txt
+```
