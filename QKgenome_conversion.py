@@ -84,24 +84,25 @@ def import_SNPs(varscan, read_threshold, percent_threshold, prefix):
 		sline = string.split(line)
 
 		if truth:
-			if '%' in sline[4]:
-				if int(string.split(sline[4], ':')[1]) >= read_threshold:
-					SNP_frequency_file.write(string.split(sline[4], ':')[1] + '\t' + string.replace(string.split(sline[4], ':')[4], '%', '') + '\n')
+			if sline[2] in DNA:
+				if '%' in sline[4]:
+					if int(string.split(sline[4], ':')[1]) >= read_threshold:
+						SNP_frequency_file.write(string.split(sline[4], ':')[1] + '\t' + string.replace(string.split(sline[4], ':')[4], '%', '') + '\n')
+	
+						if float(string.replace(string.split(sline[4], ':')[4], '%', '')) >= percent_threshold:
+							if sline[0] not in contig_position_allele.keys():
+								contig_position_allele[sline[0]] = {}
 
-					if float(string.replace(string.split(sline[4], ':')[4], '%', '')) >= percent_threshold:
-						if sline[0] not in contig_position_allele.keys():
-							contig_position_allele[sline[0]] = {}
-
-						contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
-			else:
-				if (int(sline[4]) + int(sline[5])) >= read_threshold:
-					SNP_frequency_file.write(str(int(sline[4]) + int(sline[5])) + '\t' + string.replace(sline[6], '%', '') + '\n')
-
-					if float(string.replace(sline[6], '%', '')) >= percent_threshold:
-						if sline[0] not in contig_position_allele.keys():
-							contig_position_allele[sline[0]] = {}
-
-						contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[18], float(string.replace(sline[6], '%', ''))]
+							contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
+				else:
+					if (int(sline[4]) + int(sline[5])) >= read_threshold:
+						SNP_frequency_file.write(str(int(sline[4]) + int(sline[5])) + '\t' + string.replace(sline[6], '%', '') + '\n')
+	
+						if float(string.replace(sline[6], '%', '')) >= percent_threshold:
+							if sline[0] not in contig_position_allele.keys():
+								contig_position_allele[sline[0]] = {}
+	
+							contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[18], float(string.replace(sline[6], '%', ''))]
 
 		truth = True
 
@@ -127,44 +128,45 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 		sline = string.split(line)
 
 		if truth:
-			if '%' in sline[4]:
-				if int(string.split(sline[4], ':')[1]) >= read_threshold:
-					SNP_frequency_file.write(string.split(sline[4], ':')[1] + '\t' + string.replace(string.split(sline[4], ':')[4], '%', '') + '\n')
-
-					if float(string.replace(string.split(sline[4], ':')[4], '%', '')) >= lower_threshold:
-						if float(string.replace(string.split(sline[4], ':')[4], '%', '')) < higher_threshold:
-							if sline[0] not in contig_position_allele.keys():
-								contig_position_allele[sline[0]] = {}
-
-							if int(sline[1]) not in contig_position_allele[sline[0]].keys():
-								if sline[3] in IUPAC_SNP.keys():
-									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], variant_allele, float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
+			if sline[2] in DNA:
+				if '%' in sline[4]:
+					if int(string.split(sline[4], ':')[1]) >= read_threshold:
+						SNP_frequency_file.write(string.split(sline[4], ':')[1] + '\t' + string.replace(string.split(sline[4], ':')[4], '%', '') + '\n')
+	
+						if float(string.replace(string.split(sline[4], ':')[4], '%', '')) >= lower_threshold:
+							if float(string.replace(string.split(sline[4], ':')[4], '%', '')) < higher_threshold:
+								if sline[0] not in contig_position_allele.keys():
+									contig_position_allele[sline[0]] = {}
+	
+								if int(sline[1]) not in contig_position_allele[sline[0]].keys():
+									if sline[3] in IUPAC_SNP.keys():
+										variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], variant_allele, float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
+									else:
+										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
 								else:
-									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
-							else:
-								variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-								true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
-								contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
-			else:
-				if (int(sline[4]) + int(sline[5])) >= read_threshold:
-					SNP_frequency_file.write(str(int(sline[4]) + int(sline[5])) + '\t' + string.replace(sline[6], '%', '') + '\n')
-
-					if float(string.replace(sline[6], '%', '')) >= lower_threshold:
-						if float(string.replace(sline[6], '%', '')) < higher_threshold:
-							if sline[0] not in contig_position_allele.keys():
-								contig_position_allele[sline[0]] = {}
-
-							if int(sline[1]) not in contig_position_allele[sline[0]].keys():
-								if sline[3] in IUPAC_SNP.keys():
 									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], variant_allele, float(string.replace(sline[6], '%', ''))]
+									true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+									contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+				else:
+					if (int(sline[4]) + int(sline[5])) >= read_threshold:
+						SNP_frequency_file.write(str(int(sline[4]) + int(sline[5])) + '\t' + string.replace(sline[6], '%', '') + '\n')
+	
+						if float(string.replace(sline[6], '%', '')) >= lower_threshold:
+							if float(string.replace(sline[6], '%', '')) < higher_threshold:
+								if sline[0] not in contig_position_allele.keys():
+									contig_position_allele[sline[0]] = {}
+	
+								if int(sline[1]) not in contig_position_allele[sline[0]].keys():
+									if sline[3] in IUPAC_SNP.keys():
+										variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], variant_allele, float(string.replace(sline[6], '%', ''))]
+									else:
+										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(sline[6], '%', ''))]
 								else:
-									contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(sline[6], '%', ''))]
-							else:
-								variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-								true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
-								contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+									true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+									contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 
 		truth = True
 
