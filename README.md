@@ -20,6 +20,20 @@ A set of scripts for converting genomes based on resequencing information.
 5. Intron junctions in reference and converted sequence
 6. Figures displaying read coverage on gene space, SNP and InDel variant frequency above coverage threshold, and the frequency of intron splice junctions.
 
+## Optional commands
+1. Annotation
+   -a, --annotation
+   To include a tab-delimited file containing gene annotations
+2. Masking of regions without read coverage
+   -m, --mask
+   Will convert nucleotides to N where read coverage is below the provided threshold
+3. Inclusion of heterozygous SNPs
+   Requires two parameters:
+      -l, --lower
+      Lower bound for SNP frequency threshold
+      -u, --uper
+      Upper bound for SNP frequency threshold
+
 <i>QKgenome_phylogeny.py</i> uses the output generated from <i>QKgenome_conversion.py</i> to generate an input file in Phylip format for generating a phylogenetic tree. Additional uses of data include association genetics or candidate gene analysis.
 
 ## Example
