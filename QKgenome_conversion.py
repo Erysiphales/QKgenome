@@ -162,8 +162,11 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
 										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 									elif sline[3] != contig_position_allele[sline[0]][int(sline[1])][1]:
-										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + sline[3]]
-										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+										if contig_position_allele[sline[0]][int(sline[1])][1] in IUPAC_SNP.keys():
+											contig_position_allele[sline[0]][int(sline[1])][1] = 'N'
+										else:
+											true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + sline[3]]
+											contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 
 				else:
 					if (int(sline[4]) + int(sline[5])) >= read_threshold:
@@ -186,8 +189,11 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
 										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 									elif sline[3] != contig_position_allele[sline[0]][int(sline[1])][1]:
-										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + sline[3]]
-										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+										if contig_position_allele[sline[0]][int(sline[1])][1] in IUPAC_SNP.keys():
+											contig_position_allele[sline[0]][int(sline[1])][1] = 'N'
+										else:
+											true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + sline[3]]
+											contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 
 		truth = True
 
@@ -475,7 +481,7 @@ if len(options.annotation) > 0:
 	annotation_file.close()
 
 # import genomecov to estimate coverage over length of coding sequences
-print 'Genomecov'
+print 'Genome coverage'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Genomecov' + '\n')
 
 genomecov_file = open(args[6], 'r')
