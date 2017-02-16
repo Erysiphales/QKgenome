@@ -158,9 +158,12 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
 								else:
 									if sline[3] in IUPAC_SNP.keys():
-										variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
-										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+										if contig_position_allele[sline[0]][int(sline[1])][1] in IUPAC_SNP.keys():
+											contig_position_allele[sline[0]][int(sline[1])][1] = 'N'
+										else:
+											variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+											true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+											contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 									elif sline[3] != contig_position_allele[sline[0]][int(sline[1])][1]:
 										if contig_position_allele[sline[0]][int(sline[1])][1] in IUPAC_SNP.keys():
 											contig_position_allele[sline[0]][int(sline[1])][1] = 'N'
@@ -185,9 +188,12 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(sline[6], '%', ''))]
 								else:
 									if sline[3] in IUPAC_SNP.keys():
-										variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
-										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+										if contig_position_allele[sline[0]][int(sline[1])][1] in IUPAC_SNP.keys():
+											contig_position_allele[sline[0]][int(sline[1])][1] = 'N'
+										else:
+											variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+											true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+											contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 									elif sline[3] != contig_position_allele[sline[0]][int(sline[1])][1]:
 										if contig_position_allele[sline[0]][int(sline[1])][1] in IUPAC_SNP.keys():
 											contig_position_allele[sline[0]][int(sline[1])][1] = 'N'
