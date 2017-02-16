@@ -7,7 +7,17 @@ Expression files from featureCounts are optional.
 Author: Matthew Moscou <matthew.moscou@tsl.ac.uk>
 Convert a genome sequence and annotations based on read alignment
 This performs the following:
-	1. <insert protocol>
+	1.  Reads SNP and InDel
+	2.  Converts the sequence dataset based on user-defined thresholds
+	3.  Reads gene information (GFF3) 
+	4.  Optional: Reads annotation information
+	5.  Reads read coverage across dataset
+	6.  Assesses coverage in genic regions
+	7.  Optional: Masks regions below user defined threshold
+	8.  Optional: Reads expression datasets
+	9.  Exports analysis on genic regions, provides various statistics and sequence information
+	10. Intron analysis
+	11. Generates R script for data visualization
 
 Improvements from existing script set (9 February 2017):
 	1. Fixed InDel sign with respect to reference
@@ -20,14 +30,16 @@ Improvements from existing script set (9 February 2017):
 		b. Average coverage across entire data set (gene space only)
 		c. Frequency of different splice sites in region
 		d. Candidate gene analysis file, well structured (use NA), export relevant images
-
-Future improvements to include:
-	1. Incorporate dN/dS analysis?
-	2. Add ability to investigate heterokaryotic SNPs (such as in dikaryotic rusts)
-	3. Export statistics and information about alignment, with call information as well (for book keeping purposes, with date/time)
+	7. Ability to investigate heterokaryotic SNPs (such as in dikaryotic rusts)
+	8. Export statistics and information about alignment, with call information as well (for book keeping purposes, with date/time)
 		a. Document time - command is time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
 		b. Number of genes evaluated
-		c. ???
+
+Future improvements to include:
+	1. Incorporate dN/dS analysis
+	2. Modify the script to analyze a single contig at a time to reduce memory use
+	   this would need to be based on using genomecov as the reference file
+	   all other files would still need to be stored in memory
 """
 
 ## modules
@@ -44,7 +56,7 @@ import sets
 import string
 
 """
-# incorporate later to have dN/dS analyses
+# incorporate later to perform dN/dS analyses
 
 import synonymous_calc_MM1
 from synonymous_calc_MM1 import *
@@ -145,9 +157,14 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 									else:
 										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(string.split(sline[4], ':')[4], '%', ''))]
 								else:
-									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-									true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
-									contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+									if sline[3] in IUPAC_SNP.keys():
+										variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+									elif sline[3] != contig_position_allele[sline[0]][int(sline[1])][1]:
+										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + sline[3]]
+										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+
 				else:
 					if (int(sline[4]) + int(sline[5])) >= read_threshold:
 						SNP_frequency_file.write(str(int(sline[4]) + int(sline[5])) + '\t' + string.replace(sline[6], '%', '') + '\n')
@@ -164,9 +181,13 @@ def import_heterozygous_SNPs(varscan, read_threshold, lower_threshold, higher_th
 									else:
 										contig_position_allele[sline[0]][int(sline[1])] = [sline[2], sline[3], float(string.replace(sline[6], '%', ''))]
 								else:
-									variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
-									true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
-									contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+									if sline[3] in IUPAC_SNP.keys():
+										variant_allele = list(sets.Set(IUPAC_SNP[sline[3]]) - sets.Set(sline[2]))[0]
+										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + variant_allele]
+										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
+									elif sline[3] != contig_position_allele[sline[0]][int(sline[1])][1]:
+										true_allele = IUPAC_convert[contig_position_allele[sline[0]][int(sline[1])][1] + sline[3]]
+										contig_position_allele[sline[0]][int(sline[1])][1] = true_allele
 
 		truth = True
 
@@ -244,7 +265,6 @@ def str_distance(string1, string2):
 usage = "usage: %prog [options] coverage_threshold frequency_threshold FASTA GFF3 pileup2snp pileup2indel genomecov prefix [expression files]"
 parser = OptionParser(usage=usage)
 parser.add_option("-a", "--annotation", action="store", type="string", dest="annotation", default='', help="Annotation file (tab-limited)")
-parser.add_option("-d", "--heterozygous", action="store_true", dest="het", default=False, help="Evaluate heterozygous/hemizygous/dikaryotic SNPs and InDels")
 parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
 parser.add_option("-l", "--lower", action="store", type="float", dest="lower", default=-1, help="Lower threshold for heterozygous SNPs")
 parser.add_option("-u", "--upper", action="store", type="float", dest="upper", default=-1, help="Upper threshold for heterozygous SNPs")
