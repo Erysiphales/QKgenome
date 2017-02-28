@@ -20,7 +20,7 @@ A set of scripts for converting genomes based on resequencing information.
 5. Intron junctions in reference and converted sequence
 6. Figures displaying read coverage on gene space, SNP and InDel variant frequency above coverage threshold, and the frequency of intron splice junctions.
 
-## Optional commands
+### Optional commands
 1. Annotation
 
    -a, --annotation   To include a tab-delimited file containing gene annotations
@@ -36,6 +36,8 @@ A set of scripts for converting genomes based on resequencing information.
       -u, --upper     Upper bound for SNP frequency threshold
 
 <i>QKgenome_phylogeny.py</i> uses the output generated from <i>QKgenome_conversion.py</i> to generate an input file in Phylip format for generating a phylogenetic tree. Additional uses of data include association genetics or candidate gene analysis.
+
+Note: Some customization is required to take full advantage of <i>QKgenome_phylogeny.py</i>. In particular, it is a common feature of genomes that multiple gene models exist for a gene. These arise from splice site variants, which can create transcripts with different 5' and 3' UTRs, as well as change the coding sequence. There is not a single accepted standard nomenclature for gene models, therefore, removal of potential redundancy in an analysis requires modification of the script for the species specific nomenclature. There is existing code within the script to handle this, but the user needs to modify it.
 
 ## Example
 ### Convert a genomic region in <i>Brachypodium distachyon</i> from reference sequence based on a resequenced genotype
