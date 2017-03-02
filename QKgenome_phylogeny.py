@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-QKgenome_phylogeny.py [options] datasets phylogeny gene_position
+QKgenome_phylogeny.py [options] datasets coverage prefix
 Author: Matthew Moscou <matthew.moscou@tsl.ac.uk>
 Convert a genome sequence and annotations based on alignment from another genome
 Generates a Phylip formatted alignment of polymorphic SNP sites based on output from QKgenome_conversion.py
@@ -11,6 +11,7 @@ This performs the following:
 	2. apply restriction (user specified coverage, SNPs, no Stop codon modification/indels)
 	3. import FASTA files
 	4. export for phylogenetic analysis with Phylip
+	5. export matrix for presence of InDels, stop codon modifications, and mutations in introns for each gene x sample
 
 Future improvements to include:
 	1. identify synonymous and non-synonymous SNPs (group separately and together)
@@ -30,7 +31,7 @@ IUPAC_SNP = {'R':['A', 'G'], 'Y':['C', 'T'], 'M':['A', 'C'], 'K':['G', 'T'], 'W'
 
 ## OptionParser
 # import arguments and options
-usage = "usage: %prog [options] datasets coverage information phylogeny"
+usage = "usage: %prog [options] datasets coverage prefix"
 parser = OptionParser(usage=usage)
 (options, args) = parser.parse_args()
 
@@ -39,6 +40,7 @@ parser = OptionParser(usage=usage)
 filename_file = open(args[0], 'r')
 
 datasets = {}
+dataset_order = []
 
 for line in filename_file.readlines():
 	line = string.replace(line, '\n', '')
@@ -46,6 +48,7 @@ for line in filename_file.readlines():
 
 	if len(sline) > 0:
 		datasets[sline[0]] = sline[1]
+		dataset_order.append(sline[0])
 
 filename_file.close()
 
@@ -56,16 +59,21 @@ coverage = float(args[1])
 
 # read individual data sets - candidate gene analysis
 print 'read individual data sets - candidate gene analysis'
+gene_order = []
 dataset_gene = {}
 dataset_gene_with_coverage = {}
+dataset_gene_indel_stop_intron = {}
 genes_with_SNPs = []
 
 for dataset in datasets.keys():
-	print '\t' + dataset
+	print '\t' + dataset,
+
+	# read individual analyses from QKgenome_conversion.py
 	candidate_gene_analysis_file = open(dataset + '_candidate_gene_analysis.txt', 'r')
 
 	dataset_gene[dataset] = []
 	dataset_gene_with_coverage[dataset] = []
+	dataset_gene_indel_stop_intron[dataset] = {}
 
 	truth = False
 
@@ -83,9 +91,26 @@ for dataset in datasets.keys():
 
 						dataset_gene_with_coverage[dataset].append(sline[0])
 
+			dataset_gene_indel_stop_intron[dataset][sline[0]] = [sline[9], sline[10], []]
+
+			if dataset == datasets.keys()[0]:
+				gene_order.append(sline[0])
+
 		truth = True
 
+	print '\t' + str(len(dataset_gene_with_coverage[dataset]))
+
 	candidate_gene_analysis_file.close()
+
+	intron_file = open(dataset + '_intron_junction_sequence.txt', 'r')
+
+	for line in intron_file.readlines():
+		sline = string.split(line)
+
+		if sline[2] != sline[3]:
+			dataset_gene_indel_stop_intron[dataset][sline[0]][2].append(sline[1])
+	
+	intron_file.close()
 
 genes_with_coverage = dataset_gene_with_coverage[datasets.keys()[0]]
 
@@ -104,7 +129,7 @@ print '--------------------------------------------------'
 print
 print 'dataset' + '\t' + 'shared genes with SNPs' + '\t' + 'shared genes with coverage (across) and SNPs'
 
-for dataset in datasets.keys():
+for dataset in dataset_order:
 	print dataset + '\t' + str(len(sets.Set(genes_with_SNPs) & sets.Set(dataset_gene[dataset]))) + '\t' + str(len(sets.Set(genes_with_coverage) & sets.Set(dataset_gene[dataset])))
 
 print '--------------------------------------------------'
@@ -130,9 +155,45 @@ for dataset in datasets.keys():
 	cds_sequence_file.close()
 
 
+# export matrix with InDel, stop codon modifications, and intron junction mutations
+indel_file = open(args[2] + '_CDS_InDel.txt', 'w')
+stop_codon_file = open(args[2] + '_stop_codon_modification.txt', 'w')
+intron_junction_file = open(args[2] + '_intron_junctions.txt', 'w')
+
+indel_file.write('gene')
+stop_codon_file.write('gene')
+intron_junction_file.write('gene')
+
+for dataset in dataset_order:
+	indel_file.write('\t' + datasets[dataset])
+	stop_codon_file.write('\t' + datasets[dataset])
+	intron_junction_file.write('\t' + datasets[dataset])
+
+indel_file.write('\n')
+stop_codon_file.write('\n')
+intron_junction_file.write('\n')
+
+for gene in gene_order:
+	indel_file.write(gene)
+	stop_codon_file.write(gene)
+	intron_junction_file.write(gene)
+
+	for dataset in dataset_order:
+		indel_file.write('\t' + dataset_gene_indel_stop_intron[dataset][gene][0])
+		stop_codon_file.write('\t' + dataset_gene_indel_stop_intron[dataset][gene][1])
+		intron_junction_file.write('\t' + str(len(dataset_gene_indel_stop_intron[dataset][gene][2])))
+	
+	indel_file.write('\n')
+	stop_codon_file.write('\n')
+	intron_junction_file.write('\n')
+
+indel_file.close()
+stop_codon_file.close()
+intron_junction_file.close()
+
 # export sequence source information for phylogenetic analysis
 print 'export sequence source information for phylogenetic analysis'
-gene_position_file = open(args[2], 'w')
+gene_position_file = open(args[2] + '_source_information.txt', 'w')
 
 dataset_phylip_input = {}
 
@@ -149,10 +210,10 @@ gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
 
 """
 for gene in list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage)):
-	if string.split(gene, 'T')[1] not in gene_redundancy.keys():
-		gene_redundancy[string.split(gene, 'T')[1]] = []
+	if string.split(gene, '.')[0] not in gene_redundancy.keys():
+		gene_redundancy[string.split(gene, '.')[0]] = []
 	
-	gene_redundancy[string.split(gene, 'T')[1]].append(gene)
+	gene_redundancy[string.split(gene, '.')[0]].append(gene)
 
 for gene in gene_redundancy.keys():
 	if len(gene_redundancy[gene]) == 1:
@@ -161,20 +222,20 @@ for gene in gene_redundancy.keys():
 		selected = False
 
 		for splice_model in gene_redundancy[gene]:
-			if 'T0' in splice_model:
+			if '.1.v3.1' in splice_model:
 				gene_selection.append(splice_model)
 				selected = True
 
 		if not selected:
 			for splice_model in gene_redundancy[gene]:
-				if 'T1' in splice_model:
+				if '.2.v3.1' in splice_model:
 					gene_selection.append(splice_model)
 					selected = True
 
 		if not selected:
 			print '\tFreak out!'
 
-		print 'PST' + gene, len(gene_redundancy[gene]), gene_redundancy[gene] 
+		print gene, len(gene_redundancy[gene]), gene_redundancy[gene] 
 """
 
 print
@@ -212,11 +273,11 @@ print 'number of evaluated positions:', evaluated_positions, 'bp'
 
 # export multiple sequence alignment of polymorphic sites
 print 'export multiple sequence alignment of polymorphic sites'
-phylip_input = open(args[3], 'w')
+phylip_input = open(args[2] + '_phylogeny.phy', 'w')
 
 phylip_input.write(' ' + str(len(datasets.keys())) + ' ' + str(len(dataset_phylip_input[datasets.keys()[0]])) + '\n')
 
 for dataset in datasets:
-	phylip_input.write(datasets[dataset] + ''.join([' '] * (10 - len(dataset))) + dataset_phylip_input[dataset] + '\n')
+	phylip_input.write(datasets[dataset] + ''.join([' '] * (10 - len(datasets[dataset]))) + dataset_phylip_input[dataset] + '\n')
 
 phylip_input.close()
