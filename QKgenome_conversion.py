@@ -818,10 +818,7 @@ for contig in contig_geneID_transcript_start_stop_strand.keys():
 				print geneID, len(coding_sequence)
 	
 			if DNA_distance >= 0:
-				if options.mask:
-					protein_distance = -1
-				else:
-					protein_distance = str_distance(str(pep), str(pepc))
+				protein_distance = str_distance(str(pep), str(pepc))
 	
 				gene_model_analysis_file.write('\t' + str(DNA_distance))
 				gene_model_analysis_file.write('\t' + str(len(str(pep))))
