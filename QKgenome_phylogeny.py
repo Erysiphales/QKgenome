@@ -11,7 +11,7 @@ This performs the following:
 	2. apply restriction (user specified coverage, SNPs, no Stop codon modification/indels)
 	3. import FASTA files
 	4. export for phylogenetic analysis with Phylip
-	5. export matrix for presence of InDels, stop codon modifications, and mutations in introns for each gene x sample
+	5. export matrix for coverage, presence of InDels, stop codon modifications, and mutations in introns for each gene x sample
 
 Future improvements to include:
 	1. identify synonymous and non-synonymous SNPs (group separately and together)
@@ -62,7 +62,7 @@ print 'read individual data sets - candidate gene analysis'
 gene_order = []
 dataset_gene = {}
 dataset_gene_with_coverage = {}
-dataset_gene_indel_stop_intron = {}
+dataset_gene_coverage_indel_stop_intron = {}
 genes_with_SNPs = []
 
 for dataset in datasets.keys():
@@ -73,7 +73,7 @@ for dataset in datasets.keys():
 
 	dataset_gene[dataset] = []
 	dataset_gene_with_coverage[dataset] = []
-	dataset_gene_indel_stop_intron[dataset] = {}
+	dataset_gene_coverage_indel_stop_intron[dataset] = {}
 
 	truth = False
 
@@ -91,7 +91,7 @@ for dataset in datasets.keys():
 
 						dataset_gene_with_coverage[dataset].append(sline[0])
 
-			dataset_gene_indel_stop_intron[dataset][sline[0]] = [sline[9], sline[10], []]
+			dataset_gene_coverage_indel_stop_intron[dataset][sline[0]] = [sline[5], sline[9], sline[10], []]
 
 			if dataset == datasets.keys()[0]:
 				gene_order.append(sline[0])
@@ -108,7 +108,7 @@ for dataset in datasets.keys():
 		sline = string.split(line)
 
 		if sline[2] != sline[3]:
-			dataset_gene_indel_stop_intron[dataset][sline[0]][2].append(sline[1])
+			dataset_gene_coverage_indel_stop_intron[dataset][sline[0]][3].append(sline[1])
 	
 	intron_file.close()
 
@@ -156,37 +156,45 @@ for dataset in datasets.keys():
 
 
 # export matrix with InDel, stop codon modifications, and intron junction mutations
+coverage_file = open(args[2] + '_coverage.txt', 'w')
 indel_file = open(args[2] + '_CDS_InDel.txt', 'w')
 stop_codon_file = open(args[2] + '_stop_codon_modification.txt', 'w')
 intron_junction_file = open(args[2] + '_intron_junctions.txt', 'w')
 
+coverage_file.write('gene')
 indel_file.write('gene')
 stop_codon_file.write('gene')
 intron_junction_file.write('gene')
 
 for dataset in dataset_order:
+	coverage_file.write('\t' + datasets[dataset])
 	indel_file.write('\t' + datasets[dataset])
 	stop_codon_file.write('\t' + datasets[dataset])
 	intron_junction_file.write('\t' + datasets[dataset])
 
+coverage_file.write('\n')
 indel_file.write('\n')
 stop_codon_file.write('\n')
 intron_junction_file.write('\n')
 
 for gene in gene_order:
+	coverage_file.write(gene)
 	indel_file.write(gene)
 	stop_codon_file.write(gene)
 	intron_junction_file.write(gene)
 
 	for dataset in dataset_order:
-		indel_file.write('\t' + dataset_gene_indel_stop_intron[dataset][gene][0])
-		stop_codon_file.write('\t' + dataset_gene_indel_stop_intron[dataset][gene][1])
-		intron_junction_file.write('\t' + str(len(dataset_gene_indel_stop_intron[dataset][gene][2])))
+		coverage_file.write('\t' + dataset_gene_coverage_indel_stop_intron[dataset][gene][0])
+		indel_file.write('\t' + dataset_gene_coverage_indel_stop_intron[dataset][gene][1])
+		stop_codon_file.write('\t' + dataset_gene_coverage_indel_stop_intron[dataset][gene][2])
+		intron_junction_file.write('\t' + str(len(dataset_gene_coverage_indel_stop_intron[dataset][gene][3])))
 	
+	coverage_file.write('\n')
 	indel_file.write('\n')
 	stop_codon_file.write('\n')
 	intron_junction_file.write('\n')
 
+coverage_file.close()
 indel_file.close()
 stop_codon_file.close()
 intron_junction_file.close()
@@ -239,6 +247,8 @@ for gene in gene_redundancy.keys():
 """
 
 print
+
+gene_selection = list(sets.Set(gene_selection) - sets.Set(['Bradi4g24360.1.v3.1', 'Bradi4g24367.1.v3.1', 'Bradi4g24378.1.v3.1', 'Bradi4g24390.1.v3.1']))
 
 for gene in gene_selection:
 	gene_length = len(dataset_gene_sequence[datasets.keys()[0]][gene])
