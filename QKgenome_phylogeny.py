@@ -33,6 +33,7 @@ IUPAC_SNP = {'R':['A', 'G'], 'Y':['C', 'T'], 'M':['A', 'C'], 'K':['G', 'T'], 'W'
 # import arguments and options
 usage = "usage: %prog [options] datasets coverage prefix"
 parser = OptionParser(usage=usage)
+parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Masking used in QKgenome_conversion")
 (options, args) = parser.parse_args()
 
 
@@ -82,7 +83,16 @@ for dataset in datasets.keys():
 		sline = string.split(line, '\t')
 
 		if truth:
-			if float(sline[5]) >= coverage:
+			if options.mask:
+				if sline[10] == 'No':
+					if sline[9] == 'NA':
+						if int(sline[6]) > 0:
+							dataset_gene[dataset].append(sline[0])
+							genes_with_SNPs.append(sline[0])
+
+						dataset_gene_with_coverage[dataset].append(sline[0])
+
+			elif float(sline[5]) >= coverage:
 				if sline[10] == 'No':
 					if sline[9] == 'NA':
 						if int(sline[6]) > 0:
@@ -216,7 +226,6 @@ gene_selection = []
 # this will depend on the approach for naming splice model
 gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
 
-"""
 for gene in list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage)):
 	if string.split(gene, '.')[0] not in gene_redundancy.keys():
 		gene_redundancy[string.split(gene, '.')[0]] = []
@@ -244,7 +253,6 @@ for gene in gene_redundancy.keys():
 			print '\tFreak out!'
 
 		print gene, len(gene_redundancy[gene]), gene_redundancy[gene] 
-"""
 
 print
 
@@ -259,7 +267,7 @@ for gene in gene_selection:
 		for dataset in datasets.keys():
 			nucleotides.append(dataset_gene_sequence[dataset][gene][base_index])
 
-		if len(sets.Set(nucleotides)) > 1:
+		if len(sets.Set(nucleotides) - sets.Set(['N'])) > 1:
 			gene_position_file.write(gene + '\t' + str(base_index + 1))
 
 			for dataset in datasets.keys():
