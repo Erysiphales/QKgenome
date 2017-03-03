@@ -524,21 +524,24 @@ for line in genomecov_file.readlines():
 	sline = string.split(line)
 
 	if sline[0] in contig_evaluated_positions.keys():
-		if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
-			while int(sline[1]) > contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
-				contig_position_index[sline[0]] += 1
+		if options.mask:
+			contig_position_coverage[sline[0]][int(sline[1]) - 1] = int(float(sline[2]))
+		else:
+			if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
+				while int(sline[1]) > contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
+					contig_position_index[sline[0]] += 1
 
-				if contig_position_index[sline[0]] > len(contig_evaluated_positions[sline[0]]):
-					break
+					if contig_position_index[sline[0]] > len(contig_evaluated_positions[sline[0]]):
+						break
 
-		if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
-			if int(sline[1]) == contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
-				bases = int(float(sline[2])) 
+			if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
+				if int(sline[1]) == contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
+					bases = int(float(sline[2])) 
 
-				# save coverage, position in Python start (0) not GFF (1), positions with no coverage will not be present as a key
-				contig_position_coverage[sline[0]][int(sline[1]) - 1] = bases
+					# save coverage, position in Python start (0) not GFF (1), positions with no coverage will not be present as a key
+					contig_position_coverage[sline[0]][int(sline[1]) - 1] = bases
 
-				contig_position_index[sline[0]] += 1
+					contig_position_index[sline[0]] += 1
 
 genomecov_file.close()
 
@@ -576,6 +579,17 @@ if options.mask:
 					base_pair_offset -= len(contig_position_allele_indels[contig][position][2])
 				else:
 					print 'Here be dragons...'
+
+	print 'Export Masked Sequence'
+	summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Export Masked Sequence' + '\n')
+
+	masked_sequence_file = open(prefix + '_masked.fa', 'w')
+
+	for ID in ID_sequence_masked.keys():
+		masked_sequence_file.write('>' + ID + '\n')
+		masked_sequence_file.write(ID_sequence_masked[ID] + '\n')
+
+	masked_sequence_file.close()
 
 dataset_gene_expression = {}
 
