@@ -18,6 +18,10 @@ Future improvements to include:
 """
 
 ## modules
+import Bio
+from Bio.Alphabet import IUPAC
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 import optparse
 from optparse import OptionParser 
 import sets
@@ -34,7 +38,14 @@ IUPAC_SNP = {'R':['A', 'G'], 'Y':['C', 'T'], 'M':['A', 'C'], 'K':['G', 'T'], 'W'
 usage = "usage: %prog [options] datasets coverage prefix"
 parser = OptionParser(usage=usage)
 parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
+parser.add_option("-s", "--synonymous", action="store_true", dest="synonymous", default=False, help="Restrict analysis to synonymous SNPs")
 (options, args) = parser.parse_args()
+
+
+## exceptions
+if options.mask and options.synonymous:
+	print '\t' + 'Error: Commands -m or -s cannot be selected in parallel'
+	exit()
 
 
 # read in dataset identifiers
@@ -66,7 +77,7 @@ dataset_gene_with_coverage = {}
 dataset_gene_coverage_indel_stop_intron = {}
 genes_with_SNPs = []
 
-for dataset in datasets.keys():
+for dataset in dataset_order:
 	print '\t' + dataset,
 
 	# read individual analyses from QKgenome_conversion.py
@@ -99,7 +110,7 @@ for dataset in datasets.keys():
 
 			dataset_gene_coverage_indel_stop_intron[dataset][sline[0]] = [sline[5], sline[9], sline[10], []]
 
-			if dataset == datasets.keys()[0]:
+			if dataset == dataset_order[0]:
 				gene_order.append(sline[0])
 
 		truth = True
@@ -118,10 +129,10 @@ for dataset in datasets.keys():
 	
 	intron_file.close()
 
-genes_with_coverage = dataset_gene_with_coverage[datasets.keys()[0]]
+genes_with_coverage = dataset_gene_with_coverage[dataset_order[0]]
 
-for index in range(1, len(datasets.keys())):
-	genes_with_coverage = list(sets.Set(genes_with_coverage) & sets.Set(dataset_gene_with_coverage[datasets.keys()[index]]))
+for index in range(1, len(dataset_order)):
+	genes_with_coverage = list(sets.Set(genes_with_coverage) & sets.Set(dataset_gene_with_coverage[dataset_order[index]]))
 
 genes_with_SNPs = list(sets.Set(genes_with_SNPs))
 
@@ -145,7 +156,7 @@ print
 print 'read individual data sets - coding sequence'
 dataset_gene_sequence = {}
 
-for dataset in datasets.keys():
+for dataset in dataset_order:
 	cds_sequence_file = open(dataset + '_CDS.fa', 'r')
 
 	dataset_gene_sequence[dataset] = {}
@@ -209,9 +220,26 @@ intron_junction_file.close()
 print 'export sequence source information for phylogenetic analysis'
 gene_position_file = open(args[2] + '_source_information.txt', 'w')
 
+gene_position_file.write('gene' + '\t' + 'position')
+
+if not options.mask:
+	protein_position_file = open(args[2] + '_protein_variation.txt', 'w')
+	protein_position_file.write('gene' + '\t' + 'position')
+
+for dataset in dataset_order:
+	gene_position_file.write('\t' + datasets[dataset])
+
+	if not options.mask:
+		protein_position_file.write('\t' + datasets[dataset])
+
+gene_position_file.write('\n')
+
+if not options.mask:
+	protein_position_file.write('\n')
+
 dataset_phylip_input = {}
 
-for dataset in datasets.keys():
+for dataset in dataset_order:
 	dataset_phylip_input[dataset] = ''
 
 gene_redundancy = {}
@@ -252,25 +280,74 @@ for gene in gene_redundancy.keys():
 
 print
 
+gene_selection = list(sets.Set(gene_selection) - sets.Set(['Bradi4g24360.1.v3.1', 'Bradi4g24367.1.v3.1', 'Bradi4g24378.1.v3.1', 'Bradi4g24390.1.v3.1']))
+
 for gene in gene_selection:
-	gene_length = len(dataset_gene_sequence[datasets.keys()[0]][gene])
+	CDS =  Seq(dataset_gene_sequence[dataset_order[0]][gene], IUPAC.ambiguous_dna)
+	pep = CDS.translate(to_stop=True)
 
-	for base_index in range(gene_length):
-		nucleotides = []
+	gene_length = len(dataset_gene_sequence[dataset_order[0]][gene])
+	protein_length = len(pep)
 
-		for dataset in datasets.keys():
-			nucleotides.append(dataset_gene_sequence[dataset][gene][base_index])
+	peptides = {}
 
-		if len(sets.Set(nucleotides) - sets.Set(['N'])) > 1:
-			gene_position_file.write(gene + '\t' + str(base_index + 1))
+	for dataset in dataset_order:
+		CDS =  Seq(dataset_gene_sequence[dataset][gene], IUPAC.ambiguous_dna)
+		pep = CDS.translate(to_stop=True)
 
-			for dataset in datasets.keys():
-				dataset_phylip_input[dataset] += dataset_gene_sequence[dataset][gene][base_index]
-				gene_position_file.write('\t' + dataset_gene_sequence[dataset][gene][base_index])
+		peptides[dataset] = str(pep)
 
-			gene_position_file.write('\n')
+	if not options.mask:
+		for aa_index in range(protein_length):
+			aminoacids = []
+	
+			for dataset in dataset_order:
+				aminoacids.append(peptides[dataset][aa_index])
+	
+			if len(sets.Set(aminoacids)) == 1:
+				if options.synonymous:
+					for base_index in range(3):
+						nucleotides = []
+	
+						for dataset in dataset_order:
+							nucleotides.append(dataset_gene_sequence[dataset][gene][aa_index * 3 + base_index])
+	
+						if len(sets.Set(nucleotides) - sets.Set(['N'])) > 1:
+							gene_position_file.write(gene + '\t' + str(aa_index * 3 + base_index + 1))
+	
+							for dataset in dataset_order:
+								dataset_phylip_input[dataset] += dataset_gene_sequence[dataset][gene][aa_index * 3 + base_index]
+								gene_position_file.write('\t' + dataset_gene_sequence[dataset][gene][aa_index * 3 + base_index])
+	
+							gene_position_file.write('\n')
+			else:
+				protein_position_file.write(gene + '\t' + str(aa_index + 1))
+	
+				for dataset in dataset_order:
+					protein_position_file.write('\t' + peptides[dataset][aa_index])
+	
+				protein_position_file.write('\n')
+
+	if not options.synonymous:
+		for base_index in range(gene_length):
+			nucleotides = []
+
+			for dataset in dataset_order:
+				nucleotides.append(dataset_gene_sequence[dataset][gene][base_index])
+
+			if len(sets.Set(nucleotides) - sets.Set(['N'])) > 1:
+				gene_position_file.write(gene + '\t' + str(base_index + 1))
+
+				for dataset in dataset_order:
+					dataset_phylip_input[dataset] += dataset_gene_sequence[dataset][gene][base_index]
+					gene_position_file.write('\t' + dataset_gene_sequence[dataset][gene][base_index])
+
+				gene_position_file.write('\n')
 
 gene_position_file.close()
+
+if not options.mask:
+	protein_position_file.close()
 
 print 'number of genes in alignment:', len(gene_selection)
 print 'number of SNPs in alignment:', len(dataset_phylip_input[datasets.keys()[0]])
@@ -278,7 +355,7 @@ print 'number of SNPs in alignment:', len(dataset_phylip_input[datasets.keys()[0
 evaluated_positions = 0
 
 for gene in list(sets.Set(genes_with_coverage)):
-	evaluated_positions += len(dataset_gene_sequence[datasets.keys()[0]][gene])
+	evaluated_positions += len(dataset_gene_sequence[dataset_order[0]][gene])
 
 print 'number of evaluated positions:', evaluated_positions, 'bp'
 
@@ -287,9 +364,9 @@ print 'number of evaluated positions:', evaluated_positions, 'bp'
 print 'export multiple sequence alignment of polymorphic sites'
 phylip_input = open(args[2] + '_phylogeny.phy', 'w')
 
-phylip_input.write(' ' + str(len(datasets.keys())) + ' ' + str(len(dataset_phylip_input[datasets.keys()[0]])) + '\n')
+phylip_input.write(' ' + str(len(dataset_order)) + ' ' + str(len(dataset_phylip_input[dataset_order[0]])) + '\n')
 
-for dataset in datasets:
+for dataset in dataset_order:
 	phylip_input.write(datasets[dataset] + ''.join([' '] * (10 - len(datasets[dataset]))) + dataset_phylip_input[dataset] + '\n')
 
 phylip_input.close()
