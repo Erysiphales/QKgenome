@@ -4,6 +4,15 @@ A set of scripts for converting genomes based on resequencing information.
 ## Scripts
 <i>QKgenome_conversion.py</i> converts a reference sequence based on read alignments from a different accession/ecotype/cultivar/isolate based on user specified parameters for coverage and variant frequency. The reference sequence can be a genome, a set of genes, or transcriptome. Memory requirements for the script are proportional to the length of the sequence space.
 
+## Dependencies
+The following software and modules are requires to run the suite of QKgenome scripts:
+1. Python 2.7
+  a. BioPython 1.64
+2. R 3.2.3
+  a. ggplots2
+
+Other versions are likely to be functional, but the versions described above were used in the development of the scripts.
+
 ### Input
 1. Sequence (FASTA)
 2. GFF3
