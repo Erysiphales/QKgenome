@@ -6,6 +6,7 @@ A set of scripts for converting genomes based on resequencing information.
 
 ## Dependencies
 The following software and modules are requires to run the suite of QKgenome scripts:
+
 1. Python 2.7
   a. BioPython 1.64
 2. R 3.2.3
