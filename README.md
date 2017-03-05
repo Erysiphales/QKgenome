@@ -4,16 +4,6 @@ A set of scripts for converting genomes based on resequencing information.
 ## Scripts
 <i>QKgenome_conversion.py</i> converts a reference sequence based on read alignments from a different accession/ecotype/cultivar/isolate based on user specified parameters for coverage and variant frequency. The reference sequence can be a genome, a set of genes, or transcriptome. Memory requirements for the script are proportional to the length of the sequence space.
 
-## Dependencies
-The following software and modules are requires to run the suite of QKgenome scripts:
-
-1. Python 2.7
-  * BioPython 1.64
-2. R 3.2.3
-  * ggplots2
-
-Other versions are likely to be functional, but the versions described above were used in the development of the scripts.
-
 ### Input
 1. Sequence (FASTA)
 2. GFF3
@@ -48,6 +38,16 @@ Other versions are likely to be functional, but the versions described above wer
 <i>QKgenome_phylogeny.py</i> uses the output generated from <i>QKgenome_conversion.py</i> to generate an input file in Phylip format for generating a phylogenetic tree. Additional uses of data include association genetics or candidate gene analysis.
 
 Note: Some customization is required to take full advantage of <i>QKgenome_phylogeny.py</i>. In particular, it is a common feature of genomes that multiple gene models exist for a gene. These arise from splice site variants, which can create transcripts with different 5' and 3' UTRs, as well as change the coding sequence. There is not a single accepted standard nomenclature for gene models, therefore, removal of potential redundancy in an analysis requires modification of the script for the species specific nomenclature. There is existing code within the script to handle this, but the user needs to modify it.
+
+## Software and modules
+The following software and modules are requires to run the suite of QKgenome scripts:
+
+1. Python 2.7
+  * BioPython 1.64
+2. R 3.2.3
+  * ggplots2
+
+Other versions are likely to be functional, but the versions described above were used in the development of the scripts.
 
 ## Example
 ### Convert a genomic region in <i>Brachypodium distachyon</i> from reference sequence based on a resequenced genotype
