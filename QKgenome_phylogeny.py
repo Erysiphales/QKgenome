@@ -33,7 +33,7 @@ IUPAC_SNP = {'R':['A', 'G'], 'Y':['C', 'T'], 'M':['A', 'C'], 'K':['G', 'T'], 'W'
 # import arguments and options
 usage = "usage: %prog [options] datasets coverage prefix"
 parser = OptionParser(usage=usage)
-parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Masking used in QKgenome_conversion")
+parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
 (options, args) = parser.parse_args()
 
 
@@ -84,14 +84,10 @@ for dataset in datasets.keys():
 
 		if truth:
 			if options.mask:
-				if sline[10] == 'No':
-					if sline[9] == 'NA':
-						if int(sline[6]) > 0:
-							dataset_gene[dataset].append(sline[0])
-							genes_with_SNPs.append(sline[0])
-
-						dataset_gene_with_coverage[dataset].append(sline[0])
-
+				if sline[9] == 'NA':
+					dataset_gene[dataset].append(sline[0])
+					genes_with_SNPs.append(sline[0])
+					dataset_gene_with_coverage[dataset].append(sline[0])
 			elif float(sline[5]) >= coverage:
 				if sline[10] == 'No':
 					if sline[9] == 'NA':
@@ -255,8 +251,6 @@ for gene in gene_redundancy.keys():
 		print gene, len(gene_redundancy[gene]), gene_redundancy[gene] 
 
 print
-
-gene_selection = list(sets.Set(gene_selection) - sets.Set(['Bradi4g24360.1.v3.1', 'Bradi4g24367.1.v3.1', 'Bradi4g24378.1.v3.1', 'Bradi4g24390.1.v3.1']))
 
 for gene in gene_selection:
 	gene_length = len(dataset_gene_sequence[datasets.keys()[0]][gene])

@@ -525,8 +525,11 @@ for line in genomecov_file.readlines():
 
 	if sline[0] in contig_evaluated_positions.keys():
 		if options.mask:
+			# if masking sequence, import coverage information at all positions
 			contig_position_coverage[sline[0]][int(sline[1]) - 1] = int(float(sline[2]))
 		else:
+			# if not masking, evaluate coverage only positions that are within genes
+			# first, transverse positions where no coverage (i.e. 0) was observed
 			if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
 				while int(sline[1]) > contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
 					contig_position_index[sline[0]] += 1
@@ -534,6 +537,7 @@ for line in genomecov_file.readlines():
 					if contig_position_index[sline[0]] > len(contig_evaluated_positions[sline[0]]):
 						break
 
+			# store sequence when in genic region
 			if contig_position_index[sline[0]] < len(contig_evaluated_positions[sline[0]]):
 				if int(sline[1]) == contig_evaluated_positions[sline[0]][contig_position_index[sline[0]]]:
 					bases = int(float(sline[2])) 
@@ -562,6 +566,11 @@ if options.mask:
 		for position in contig_position_coverage[contig].keys():
 			if contig_position_coverage[contig][position] < coverage_threshold:
 				ID_sequence_masked[contig] = ID_sequence_masked[contig][:(position - 1)] + 'N' + ID_sequence_masked[contig][position:]
+
+	# incorporate SNPs
+	for contig in contig_position_allele_SNPs.keys():
+		for position in contig_position_allele_SNPs[contig].keys():
+			ID_sequence_masked[contig] = ID_sequence_masked[contig][:(position - 1)] + contig_position_allele_SNPs[contig][position][1] + ID_sequence_masked[contig][position:]
 
 	# incorporate indels
 	for contig in contig_position_allele_indels.keys():
