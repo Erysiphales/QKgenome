@@ -46,6 +46,7 @@ The following software and modules are requires to run the suite of QKgenome scr
   * BioPython 1.64
 2. R 3.2.3
   * ggplots2
+  * scales
 
 Other versions are likely to be functional, but the versions described above were used in the development of the scripts.
 
