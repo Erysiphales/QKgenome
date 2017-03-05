@@ -8,9 +8,9 @@ A set of scripts for converting genomes based on resequencing information.
 The following software and modules are requires to run the suite of QKgenome scripts:
 
 1. Python 2.7
-..* BioPython 1.64
+⋅⋅* BioPython 1.64
 2. R 3.2.3
-..* ggplots2
+⋅⋅* ggplots2
 
 Other versions are likely to be functional, but the versions described above were used in the development of the scripts.
 
