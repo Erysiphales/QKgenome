@@ -280,8 +280,6 @@ for gene in gene_redundancy.keys():
 
 print
 
-gene_selection = list(sets.Set(gene_selection) - sets.Set(['Bradi4g24360.1.v3.1', 'Bradi4g24367.1.v3.1', 'Bradi4g24378.1.v3.1', 'Bradi4g24390.1.v3.1']))
-
 for gene in gene_selection:
 	CDS =  Seq(dataset_gene_sequence[dataset_order[0]][gene], IUPAC.ambiguous_dna)
 	pep = CDS.translate(to_stop=True)
