@@ -242,13 +242,14 @@ dataset_phylip_input = {}
 for dataset in dataset_order:
 	dataset_phylip_input[dataset] = ''
 
-gene_redundancy = {}
-gene_selection = []
+gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
 
 # current version of the script does not assess redundancy
 # use code below for data set specific redundacy removal
 # this will depend on the approach for naming splice model
-gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
+"""
+gene_redundancy = {}
+gene_selection = []
 
 for gene in list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage)):
 	if string.split(gene, '.')[0] not in gene_redundancy.keys():
@@ -277,8 +278,11 @@ for gene in gene_redundancy.keys():
 			print '\tFreak out!'
 
 		print gene, len(gene_redundancy[gene]), gene_redundancy[gene] 
+"""
 
 print
+
+gene_selection.sort()
 
 for gene in gene_selection:
 	CDS =  Seq(dataset_gene_sequence[dataset_order[0]][gene], IUPAC.ambiguous_dna)
