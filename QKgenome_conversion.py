@@ -348,12 +348,18 @@ print 'Convert SNPs'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Convert SNPs' + '\n')
 for contig in contig_position_allele_SNPs.keys():
 	for position in contig_position_allele_SNPs[contig].keys():
-		ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
+		if position == 0:
+			ID_sequence_converted[contig] = contig_position_allele_SNPs[contig][position][1] + ID_sequence_converted[contig][position + 1:]
+		else:
+			ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
 
 if heterozygous_analysis:
 	for contig in contig_position_allele_heterozygous_SNPs.keys():
 		for position in contig_position_allele_heterozygous_SNPs[contig].keys():
-			ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_heterozygous_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
+			if position == 0:
+				ID_sequence_converted[contig] = contig_position_allele_SNPs[contig][position][1] + ID_sequence_converted[contig][position + 1:]
+			else:
+				ID_sequence_converted[contig] = ID_sequence_converted[contig][:(position - 1)] + contig_position_allele_heterozygous_SNPs[contig][position][1] + ID_sequence_converted[contig][position:]
 
 print 'Convert InDels'
 summary_file.write(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()) + ' ' + 'Convert InDels' + '\n')
