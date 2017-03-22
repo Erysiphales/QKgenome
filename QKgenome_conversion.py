@@ -571,10 +571,10 @@ if options.mask:
 	for contig in contig_position_coverage.keys():
 		for position in contig_position_coverage[contig].keys():
 			if contig_position_coverage[contig][position] < coverage_threshold:
-				if position >= 1:
-					ID_sequence_masked[contig] = ID_sequence_masked[contig][:(position - 1)] + 'N' + ID_sequence_masked[contig][position:]
-				else:
+				if position == 0:
 					ID_sequence_masked[contig] = 'N' + ID_sequence_masked[contig][position:]
+				else:
+					ID_sequence_masked[contig] = ID_sequence_masked[contig][:(position - 1)] + 'N' + ID_sequence_masked[contig][position:]
 
 
 	# incorporate SNPs
