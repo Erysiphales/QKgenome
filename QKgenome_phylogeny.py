@@ -4,7 +4,6 @@
 """
 QKgenome_phylogeny.py [options] datasets coverage prefix
 Author: Matthew Moscou <matthew.moscou@tsl.ac.uk>
-Convert a genome sequence and annotations based on alignment from another genome
 Generates a Phylip formatted alignment of polymorphic SNP sites based on output from QKgenome_conversion.py
 This performs the following:
 	1. import candidate gene analysis
@@ -14,7 +13,6 @@ This performs the following:
 	5. export matrix for coverage, presence of InDels, stop codon modifications, and mutations in introns for each gene x sample
 
 Future improvements to include:
-	1. identify synonymous and non-synonymous SNPs (group separately and together)
 """
 
 ## modules
@@ -39,6 +37,7 @@ usage = "usage: %prog [options] datasets coverage prefix"
 parser = OptionParser(usage=usage)
 parser.add_option("-m", "--mask", action="store_true", dest="mask", default=False, help="Mask sequence below read coverage threshold")
 parser.add_option("-s", "--synonymous", action="store_true", dest="synonymous", default=False, help="Restrict analysis to synonymous SNPs")
+parser.add_option("-a", "--all", action="store_true", dest="allsites", default=False, help="Export all sites (monomorphic and polymorphic)")
 (options, args) = parser.parse_args()
 
 
@@ -346,6 +345,13 @@ for gene in gene_selection:
 
 				gene_position_file.write('\n')
 
+if options.allsnps:
+	for dataset in dataset_order:
+		dataset_phylip_input[dataset] = ''
+
+		for gene in gene_selection:
+			dataset_phylip_input[dataset] += dataset_gene_sequence[dataset][gene]
+
 gene_position_file.close()
 
 if not options.mask:
@@ -356,7 +362,7 @@ print 'number of SNPs in alignment:', len(dataset_phylip_input[datasets.keys()[0
 
 evaluated_positions = 0
 
-for gene in list(sets.Set(genes_with_coverage)):
+for gene in list(sets.Set(gene_selection)):
 	evaluated_positions += len(dataset_gene_sequence[dataset_order[0]][gene])
 
 print 'number of evaluated positions:', evaluated_positions, 'bp'
