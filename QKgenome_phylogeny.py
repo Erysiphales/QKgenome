@@ -241,7 +241,11 @@ dataset_phylip_input = {}
 for dataset in dataset_order:
 	dataset_phylip_input[dataset] = ''
 
-gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
+if options.allsites:
+	gene_selection = list(sets.Set(genes_with_coverage))
+else:
+	gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
+
 
 # current version of the script does not assess redundancy
 # use code below for data set specific redundacy removal
@@ -250,7 +254,7 @@ gene_selection = list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage))
 gene_redundancy = {}
 gene_selection = []
 
-for gene in list(sets.Set(genes_with_SNPs) & sets.Set(genes_with_coverage)):
+for gene in list(gene_selection):
 	if string.split(gene, '.')[0] not in gene_redundancy.keys():
 		gene_redundancy[string.split(gene, '.')[0]] = []
 	
@@ -328,7 +332,7 @@ for gene in gene_selection:
 					protein_position_file.write('\t' + peptides[dataset][aa_index])
 	
 				protein_position_file.write('\n')
-
+		
 	if not options.synonymous:
 		for base_index in range(gene_length):
 			nucleotides = []
