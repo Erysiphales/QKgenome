@@ -349,7 +349,7 @@ for gene in gene_selection:
 
 				gene_position_file.write('\n')
 
-if options.allsnps:
+if options.allsites:
 	for dataset in dataset_order:
 		dataset_phylip_input[dataset] = ''
 
