@@ -323,7 +323,7 @@ for line in fasta.readlines():
 			ID_sequence[ID] = ''
 			contig_adjustment_base_pair[ID] = []
 		else:
-			ID_sequence[ID] += string.split(line)[0]
+			ID_sequence[ID] += (string.split(line)[0].upper())
 
 fasta.close()
 

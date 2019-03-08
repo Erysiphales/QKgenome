@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-QKgenome_concat_genes.py [options] datasets
+QKgenome_merge.py [options] datasets
 Author: Matthew Moscou <matthew.moscou@tsl.ac.uk>
 Concatenates coding sequences for several genotypes
 This performs the following:

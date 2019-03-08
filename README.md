@@ -1,6 +1,10 @@
 # QKgenome
 A set of scripts for converting genomes based on resequencing information.
 
+## Reference
+Please use the following reference to cite this software:
+> Bettgenhaeuser J, Gardiner M, Spanner R, Green P, Hernandez-Pinzon I, Hubbard A, et al. (2018) The genetic architecture of colonization resistance in *Brachypodium distachyon* to non-adapted stripe rust (*Puccinia striiformis*) isolates. ***PLoS Genetics*** 14(9): e1007637. [https://doi.org/10.1371/journal.pgen.1007637](https://doi.org/10.1371/journal.pgen.1007637)
+
 ## Scripts
 <i>QKgenome_conversion.py</i> converts a reference sequence based on read alignments from a different accession/ecotype/cultivar/isolate based on user specified parameters for coverage and variant frequency. The reference sequence can be a genome, a set of genes, or transcriptome. Memory requirements for the script are proportional to the length of the sequence space.
 
@@ -39,6 +43,8 @@ GFF3 files use different approaches at naming genes and gene models. The current
 |-a, --all          |Includes all sites                      |Includes monomorphic and polymorphic sites in multiple sequence alignment        |
 |-m, --mask         |Masked sequence included                |Flag when using masked sequence, cannot be used with synonymous flag             |
 |-s, --synonymous   |Identify synonymous sites only          |Flag to export synonymous sites, cannot be used with masked sequence flag        |
+
+<i>QKgenome_merge.py</i> uses the output generated from <i>QKgenome_conversion.py</i> to merge several coding sequences together for phylogenetic analysis.
 
 ### Notes
 Some degree of customization is required to take full advantage of <i>QKgenome_phylogeny.py</i>. In particular, it is a common feature of genomes that multiple gene models exist for a gene. These arise from splice site variants, which can create transcripts with different 5' and 3' UTRs, as well as change the coding sequence. There is not a single accepted standard nomenclature for gene models, therefore, removal of potential redundancy in an analysis requires modification of the script for the species specific nomenclature. There is existing code within the script to handle this, but the user needs to modify it.
