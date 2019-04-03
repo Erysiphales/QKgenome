@@ -441,8 +441,7 @@ for line in GTF_file.readlines():
 			contig = sline[0]
 		
 			if sline[2] == 'mRNA':
-				geneID = string.split(sline[8], ';')[0][3:]
-
+        		    	geneID = string.split(sline[8], ';')[0][3:]
 				contig_geneID_transcript_start_stop_strand[sline[0]][geneID] = [int(sline[3]) - 1, int(sline[4]) - 1, sline[6]]
 				contig_geneID_transcript_start_stop_strand_converted[sline[0]][geneID] = [int(sline[3]) - 1 + contig_adjustment_base_pair[contig][int(sline[3]) - 1], int(sline[4]) - 1 + contig_adjustment_base_pair[contig][int(sline[4]) - 1], sline[6]]
 
@@ -453,13 +452,20 @@ for line in GTF_file.readlines():
 				geneID_CDS_exons_converted[geneID] = []
 
 			if sline[2] == 'CDS':
-				geneID = string.split(sline[8], ';')[1][7:]
+                                if ";" in sline[8]:
+                        		geneID = string.split(sline[8], ';')[1][7:]
+                                else:
+                                        geneID = string.split(sline[8], '=')[1]
+
 
 				geneID_exons[geneID].append([int(sline[3]) - 1, int(sline[4]) - 1])
 				geneID_exons_converted[geneID].append([int(sline[3]) - 1 + contig_adjustment_base_pair[contig][int(sline[3]) - 1], int(sline[4]) - 1 + contig_adjustment_base_pair[contig][int(sline[4]) - 1]])
 
 			if sline[2] == 'CDS':
-				geneID = string.split(sline[8], ';')[1][7:]
+                                if ";" in sline[8]:
+                        		geneID = string.split(sline[8], ';')[1][7:]
+                                else:
+                                        geneID = string.split(sline[8], '=')[1]
 
 				geneID_CDS_exons[geneID].append([int(sline[3]) - 1, int(sline[4]) - 1])
 				geneID_CDS_exons_converted[geneID].append([int(sline[3]) - 1 + contig_adjustment_base_pair[contig][int(sline[3]) - 1], int(sline[4]) - 1 + contig_adjustment_base_pair[contig][int(sline[4]) - 1]])
