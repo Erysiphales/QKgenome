@@ -532,10 +532,10 @@ for contig in contig_evaluated_positions.keys():
 	for position_index in range(len(ID_sequence[contig])):
 		contig_position_coverage[contig][position_index] = 0
 
+Evaluated_position_set = set(contig_evaluated_positions.keys())
 for line in genomecov_file.readlines():
-	sline = string.split(line)
-
-	if sline[0] in contig_evaluated_positions.keys():
+	sline = string.split(line,"\t")
+        if sline[0] in Evaluated_position_set:
 		if options.mask:
 			# if masking sequence, import coverage information at all positions
 			contig_position_coverage[sline[0]][int(sline[1]) - 1] = int(float(sline[2]))
